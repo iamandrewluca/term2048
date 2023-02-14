@@ -1,54 +1,74 @@
+#![allow(unused)]
+
 use crossterm::event::{read, Event, KeyCode};
-use crossterm::execute;
+use crossterm::{cursor, event, execute, style, terminal};
 use std::io::stdout;
+
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
 
 enum Action {
     Exit,
-    Navigate(crossterm::event::KeyCode),
+    Navigate(Direction),
     Ignore,
 }
 
 fn main() {
-    crossterm::terminal::enable_raw_mode().unwrap();
-    let grid = [[0u16; 4]; 4];
+    terminal::enable_raw_mode().unwrap();
+    let mut grid = [
+        [0, 2, 64, 8],
+        [32, 14, 0, 0],
+        [0, 0, 0, 1024],
+        [0, 2048, 0, 0],
+    ];
+
+    let mut x = 0;
+    let y = 0;
+
+    let mut out = stdout();
+    let clear_screen = terminal::Clear(terminal::ClearType::All);
+    let goto_corner = cursor::MoveTo(0, 0);
 
     loop {
+        execute!(out, clear_screen, goto_corner).unwrap();
+
         draw_board(grid);
 
         let action = get_action();
 
         match action {
-            Action::Exit => {
-                break;
-            }
-            Action::Navigate(a) => println!("{:?}", a),
+            Action::Exit => break,
+            Action::Navigate(direction) => {}
             Action::Ignore => {}
         }
     }
 }
 
+fn mutate_grid(grid: [[u16; 4]; 4], direction: Direction) {}
+
 fn draw_board(grid: [[u16; 4]; 4]) {
-    for (_i, line) in grid.iter().enumerate() {
-        execute!(stdout(), crossterm::cursor::MoveToNextLine(1),).unwrap();
-        for (_j, cell) in line.iter().enumerate() {
-            execute!(
-                stdout(),
-                crossterm::style::Print(cell),
-                crossterm::cursor::MoveRight(2),
-            )
-            .unwrap();
+    for line in grid {
+        for cell in line {
+            print!("{cell: <6}")
         }
+        execute!(stdout(), cursor::MoveToNextLine(2)).unwrap();
     }
 }
 
 fn get_action() -> Action {
     match read().unwrap() {
         Event::Key(e) => match e.code {
+            KeyCode::Char('q') => Action::Exit,
+            KeyCode::Char('Q') => Action::Exit,
             KeyCode::Esc => Action::Exit,
-            KeyCode::Left => Action::Navigate(KeyCode::Left),
-            KeyCode::Right => Action::Navigate(KeyCode::Right),
-            KeyCode::Up => Action::Navigate(KeyCode::Up),
-            KeyCode::Down => Action::Navigate(KeyCode::Down),
+            KeyCode::Left => Action::Navigate(Direction::Left),
+            KeyCode::Right => Action::Navigate(Direction::Right),
+            KeyCode::Up => Action::Navigate(Direction::Up),
+            KeyCode::Down => Action::Navigate(Direction::Down),
             _ => Action::Ignore,
         },
         _ => Action::Ignore,
