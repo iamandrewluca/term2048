@@ -22,7 +22,7 @@ fn main() {
 
     let mut grid = [
         [0, 2, 64, 8],
-        [32, 14, 0, 0],
+        [32, 14, 0, 128],
         [0, 0, 0, 1024],
         [0, 2048, 0, 0],
     ];
@@ -72,7 +72,8 @@ fn draw_grid(grid: [[u16; 4]; 4]) {
         let line = grid[i];
         for j in 0..line.len() {
             let cell = line[j];
-            let x = 4 + j as u16 * 10;
+						let cell_len = cell.to_string().len() as u16;
+            let x = 4 + j as u16 * 10 + (4 - cell_len) / 2;
             let y = 2 + i as u16 * 4;
             execute!(io::stdout(), cursor::MoveTo(x, y), style::Print(cell));
         }
