@@ -15,8 +15,6 @@ enum Direction {
 impl fmt::Display for Direction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
-        // or, alternatively:
-        // fmt::Debug::fmt(self, f)
     }
 }
 
@@ -26,15 +24,36 @@ enum Action {
     Ignore,
 }
 
+struct Grid {
+    size: usize,
+    data: Vec<Vec<usize>>,
+}
+
+impl Grid {
+    fn new(size: usize) -> Grid {
+        Grid {
+            size,
+            data: vec![vec![0; size]; size],
+        }
+    }
+
+    fn from(data: Vec<Vec<usize>>) -> Grid {
+        Grid {
+            size: data.len(),
+            data,
+        }
+    }
+}
+
 fn main() {
     terminal::enable_raw_mode();
 
-    let mut grid = [
-        [0, 2, 64, 8],
-        [32, 14, 0, 128],
-        [0, 0, 0, 1024],
-        [0, 2048, 0, 0],
-    ];
+    let grid = Grid::from(vec![
+        vec![0, 2, 64, 8],
+        vec![32, 16, 0, 128],
+        vec![2, 2, 0, 1024],
+        vec![0, 2048, 0, 0],
+    ]);
 
     let mut out = io::stdout();
 
@@ -48,29 +67,45 @@ fn main() {
     );
 
     // Drawborders
-    execute!(out, style::Print(BORDERS.join("\n\r")),);
+    execute!(out, style::Print(BORDERS.join("\n\r")));
 
     let msg_position = cursor::MoveTo(2, 18);
 
     loop {
-        draw_grid(grid);
+        draw_grid(&grid);
 
         let action = get_action();
 
         match action {
             Action::Exit => break,
-            Action::Navigate(direction) => message(direction.to_string()),
+            Action::Navigate(direction) => {
+                // move_grid(grid, direction);
+                // collapse_grid(grid, direction);
+                // move_grid(grid, direction);
+                // generate_on_grid(grid);
+                // message(direction.to_string());
+            }
             Action::Ignore => {}
         }
     }
 
-		message("Good bye!");
+    message("Good bye!");
     execute!(out, cursor::Show);
     terminal::disable_raw_mode();
     process::exit(0);
 }
 
-fn mutate_grid(grid: [[u16; 4]; 4], direction: Direction) {}
+fn move_grid(grid: Grid, direction: Direction) {
+    let range = match direction {
+        Direction::Left => 4..0,
+        Direction::Up => 4..0,
+        Direction::Right => 0..4,
+        Direction::Down => 0..4,
+    };
+}
+
+// fn collapse_grid(grid: [[u16; 4]; 4], direction: Direction) {}
+// fn generate_on_grid(grid: [[u16; 4]; 4]) {}
 
 fn message<S: Into<String>>(msg: S) {
     execute!(
@@ -81,9 +116,9 @@ fn message<S: Into<String>>(msg: S) {
     );
 }
 
-fn draw_grid(grid: [[u16; 4]; 4]) {
-    for i in 0..grid.len() {
-        let line = grid[i];
+fn draw_grid(grid: &Grid) {
+    for i in 0..grid.data.len() {
+        let line = grid.data.get(i).unwrap();
         for j in 0..line.len() {
             let cell = line[j];
             let cell_len = cell.to_string().len() as u16;
